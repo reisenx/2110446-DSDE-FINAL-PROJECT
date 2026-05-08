@@ -1,2 +1,9 @@
+# Secrets
 .env
+
+# Configurations
+.vscode
+
+# Temporary files
 desktop.ini
+__pycache__
