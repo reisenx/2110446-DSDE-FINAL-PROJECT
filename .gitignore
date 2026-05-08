@@ -7,3 +7,7 @@
 # Temporary files
 desktop.ini
 __pycache__
+
+# Large dataset
+data/pdf
+data/jpg
