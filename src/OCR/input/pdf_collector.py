@@ -1,0 +1,81 @@
+import shutil
+from pathlib import Path
+from logs.logs import Logs
+from config.path_config import PathConfig
+from input.filename_translator import FilenameTranslator
+from tqdm import tqdm
+
+
+class PDFCollector:
+    @staticmethod
+    def collect_all_pdf_files() -> None:
+        """
+        Fetch all files from a dataset root path, renames each file by its path
+        and copy them to a single output folder.
+        """
+
+        # Create output path
+        PathConfig.PDF_PATH.mkdir(parents=True, exist_ok=True)
+
+        # Write Logs
+        Logs.write_logs(messages=["Starting PDF Files Collecting Process"])
+        Logs.write_report(message="Starting PDF Files Collecting Process")
+
+        # Initialize file counter
+        n_success = 0
+
+        # Collect all PDF files
+        all_files = list(PathConfig.RAW_DATASET_PATH.rglob("*.pdf"))
+        for file_path in tqdm(all_files, desc="Collecting Raw Dataset", unit="file"):
+            is_success = PDFCollector.collect_pdf_file(file_path)
+            n_success += int(is_success)
+
+        # Write Logs
+        n_skipped = len(all_files) - n_success
+        Logs.write_logs(
+            messages=[
+                f"Done PDF Files Collecting Process ({n_success} files converted and {n_skipped} files skipped)"
+            ]
+        )
+        Logs.write_report(
+            message=f"Done PDF Files Collecting Process ({n_success} files converted and {n_skipped} files skipped)"
+        )
+
+    @staticmethod
+    def collect_pdf_file(file_path: Path) -> bool:
+        """
+        Copy a PDF file from a folder and renames it using the translator.
+
+        Args:
+            file_path (Path): input file path
+
+        Returns:
+            bool: determine if the file collecting successful
+        """
+
+        # Skip a file which is not the PDF file
+        if not file_path.is_file() or file_path.suffix.lower() != ".pdf":
+            Logs.write_logs(messages=[f"Skipped {file_path.name}"])
+            return False
+
+        # Construct output directory
+        filename = FilenameTranslator.get_translated_file_path(file_path)
+        output_dir = PathConfig.PDF_PATH / filename
+
+        # Skip if file already exists
+        if output_dir.exists():
+            Logs.write_logs(
+                messages=[
+                    f"Skipped {file_path.name} because {output_dir.name} is already exist"
+                ]
+            )
+            return False
+
+        # Copy a PDF file and rename it
+        shutil.copy2(file_path, output_dir)
+
+        # Write logs
+        Logs.write_logs(
+            messages=[f"Successfully rename {file_path.name} to {output_dir.name}"]
+        )
+        return True
