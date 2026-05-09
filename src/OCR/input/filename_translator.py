@@ -59,7 +59,7 @@ class FilenameTranslator:
 
         # Determine the voting type
         translated_filename = "constituency_vote"
-        if ThaiConfig.PARTY_LIST_VOTE_KEYWORD in filename:
+        if ThaiConfig.PARTY_LIST_VOTE_FILENAME_KEYWORD in filename:
             translated_filename = "party_list_vote"
 
         # Determine the file number

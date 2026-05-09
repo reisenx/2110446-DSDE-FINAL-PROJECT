@@ -39,4 +39,4 @@ class ThaiConfig:
         "ล่วงหน้านอกเขตเลือกตั้งและนอกราชอาณาจักร": "advance_outside_district_and_overseas",
     }
 
-    PARTY_LIST_VOTE_KEYWORD = "(บช)"
+    PARTY_LIST_VOTE_FILENAME_KEYWORD = "(บช)"
