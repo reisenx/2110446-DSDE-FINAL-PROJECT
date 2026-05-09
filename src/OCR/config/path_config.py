@@ -19,3 +19,12 @@ class PathConfig:
 
     # DEFINE EXCEPTIONS
     EXCEPTION_FILENAMES = ["desktop.ini"]
+    OCR_EXCEPTION_FILENAMES = [
+        "district_mae_tha__02_subdistrict_municipality_tha_sop_chai__polling_unit_7__constituency_vote_page_2.jpg",
+        "district_mueang_lamphun__01_subdistrict_ton_thong__polling_unit_1__constituency_vote_page_2.jpg",
+        "district_mueang_lamphun__04_subdistrict_rim_ping__polling_unit_9__constituency_vote_page_2.jpg",
+        "district_mueang_lamphun__09_subdistrict_si_bua_ban__polling_unit_3__party_list_vote_page_4.jpg",
+        "district_mueang_lamphun__11_subdistrict_pa_sak__polling_unit_12__constituency_vote_page_2.jpg",
+        "district_mueang_lamphun__11_subdistrict_pa_sak__polling_unit_20__party_list_vote_page_4.jpg",
+        "district_mueang_lamphun__12_subdistrict_umong__polling_unit_7__party_list_vote_page_4.jpg",
+    ]
