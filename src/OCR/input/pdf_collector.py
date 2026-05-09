@@ -50,7 +50,7 @@ class PDFCollector:
             file_path (Path): input file path
 
         Returns:
-            bool: determine if the file collecting successful
+            bool: determine if the file collecting is successful
         """
 
         # Skip a file which is not the PDF file
@@ -58,24 +58,24 @@ class PDFCollector:
             Logs.write_logs(messages=[f"Skipped {file_path.name}"])
             return False
 
-        # Construct output directory
+        # Define output path
         filename = FilenameTranslator.get_translated_file_path(file_path)
-        output_dir = PathConfig.PDF_PATH / filename
+        output_path = PathConfig.PDF_PATH / filename
 
         # Skip if file already exists
-        if output_dir.exists():
+        if output_path.exists():
             Logs.write_logs(
                 messages=[
-                    f"Skipped {file_path.name} because {output_dir.name} is already exist"
+                    f"Skipped {file_path.name} because {output_path.name} is already exist"
                 ]
             )
             return False
 
         # Copy a PDF file and rename it
-        shutil.copy2(file_path, output_dir)
+        shutil.copy2(file_path, output_path)
 
         # Write logs
         Logs.write_logs(
-            messages=[f"Successfully rename {file_path.name} to {output_dir.name}"]
+            messages=[f"Successfully rename {file_path.name} to {output_path.name}"]
         )
         return True

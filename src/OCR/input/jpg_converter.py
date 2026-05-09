@@ -12,7 +12,7 @@ class JPGConverter:
     COLOR_MODE: str = "RGB"
     FILE_EXTENSION: str = "JPEG"
 
-    def get_all_jpg_from_pdf_file() -> None:
+    def get_all_jpg_from_pdf_files() -> None:
         """
         Converts all PDF files to JPG file
         """
@@ -68,14 +68,14 @@ class JPGConverter:
 
         # Iterate each page in a PDF file
         for idx in range(n_pages):
-            # Get output directory of a current page
+            # Define output path of a current page
             filename = f"{file_path.stem}_page_{idx + 1}.jpg"
-            output_dir = PathConfig.JPG_PATH / filename
+            output_path = PathConfig.JPG_PATH / filename
 
             # Skip if the current page is already exist
-            if output_dir.exists():
+            if output_path.exists():
                 Logs.write_logs(
-                    messages=[f"Skipped {output_dir.name} because it is already exist"]
+                    messages=[f"Skipped {output_path.name} because it is already exist"]
                 )
                 continue
 
@@ -84,7 +84,7 @@ class JPGConverter:
             bitmap = page.render(scale=JPGConverter.SCALE)
             image = bitmap.to_pil().convert(JPGConverter.COLOR_MODE)
             image.save(
-                output_dir, JPGConverter.FILE_EXTENSION, quality=JPGConverter.QUALITY
+                output_path, JPGConverter.FILE_EXTENSION, quality=JPGConverter.QUALITY
             )
 
             # Update counter
@@ -92,7 +92,9 @@ class JPGConverter:
 
             # Write logs
             Logs.write_logs(
-                messages=[f"Successfully convert {file_path.name} to {output_dir.name}"]
+                messages=[
+                    f"Successfully convert {file_path.name} to {output_path.name}"
+                ]
             )
 
         return (n_successful_pages, n_pages)
