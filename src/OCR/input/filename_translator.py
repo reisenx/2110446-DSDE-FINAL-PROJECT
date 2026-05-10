@@ -1,12 +1,17 @@
-import re
+from pathlib import Path
+
 from config.path_config import PathConfig
 from config.thai_config import ThaiConfig
-from pathlib import Path
+from config.parser_config import ParserConfig
 
 
 class FilenameTranslator:
+    """
+    A translator class that translates relative file path to a single filename
+    """
+
     @staticmethod
-    def get_translated_file_path(filepath: Path) -> str:
+    def get_translated_file_path(file_path: Path) -> str:
         """
         Translates a full relative filepath into a flatten filename
 
@@ -18,7 +23,7 @@ class FilenameTranslator:
         """
 
         # Get relative path of a file
-        relative_folder_path = filepath.parent.relative_to(PathConfig.RAW_DATASET_PATH)
+        relative_folder_path = file_path.parent.relative_to(PathConfig.RAW_DATASET_PATH)
 
         # Get folder name
         folder_names = []
@@ -30,96 +35,13 @@ class FilenameTranslator:
         folder_name = "__".join(folder_names)
 
         # Get filename
-        filename = FilenameTranslator.get_translated_filename(filepath.stem)
+        filename = FilenameTranslator.get_translated_filename(file_path.stem)
 
         # Get file extension
-        file_extension = filepath.suffix.lower()
+        file_extension = file_path.suffix.lower()
 
         # Return translated filepath
         return f"{folder_name}__{filename}{file_extension}"
-
-    @staticmethod
-    def get_translated_filename(filename: str) -> str:
-        """
-        Translate a Thai filename into English.
-
-        Args:
-            filename (str): an input filename
-
-        Returns:
-            str: a translated version of filename
-
-        Example:
-            Usage: get_translated_filename("ส.ส.5-16 ชุดที่ 9")
-            Result: "constituency_vote_09"
-
-            Usage: get_translated_filename("ส.ส.5-17(บช)-ชุดที่ 1")
-            Result: "party_list_vote_01"
-        """
-
-        # Determine the voting type
-        translated_filename = "constituency_vote"
-        if ThaiConfig.PARTY_LIST_VOTE_FILENAME_KEYWORD in filename:
-            translated_filename = "party_list_vote"
-
-        # Determine the file number
-        match = re.search(r"ชุดที่\s*(\d+)", filename)
-        if match:
-            set_number = int(match.group(1))
-            translated_filename = f"{translated_filename}_{set_number:02d}"
-
-        return translated_filename
-
-    @staticmethod
-    def get_cleaned_ascii_token(token: str) -> str:
-        """
-        Converts an input token from into lowercase string
-        with underscore as delimiter.
-        If a cleaned token is empty, returns "x" instead.
-
-        Args:
-            token (str): an input text part
-
-        Returns:
-            str: cleaned text part
-
-        Example:
-            Usage: get_cleaned_ascii_token("Hello World! (2024)")
-            Result: "hello_world_2024"
-        """
-
-        # Convert a text to lowercase and remove trailing spaces
-        token = token.lower().strip()
-
-        # Replace all non-english and non-number characters with underscore
-        token = re.sub(r"[^a-z0-9]+", "_", token)
-        token = re.sub(r"_+", "_", token).strip("_")
-
-        # Returns cleaned text
-        if token:
-            return token
-        return "x"
-
-    @staticmethod
-    def get_translated_place(text: str) -> str:
-        """
-        Translate a Thai places inside a text into English.
-
-        Args:
-            text (str): an input text
-
-        Returns:
-            str: a translated version of text
-
-        Example:
-            Usage: get_cleaned_ascii_token("ตำบลบ้านธิ")
-            Result: "ตำบลban_thi"
-        """
-
-        text = text.strip()
-        for place_th, place_en in ThaiConfig.THAI_PLACE_MAP.items():
-            text = text.replace(place_th, place_en)
-        return text
 
     @staticmethod
     def get_translated_folder_name(folder_name: str) -> str:
@@ -147,7 +69,7 @@ class FilenameTranslator:
         folder_name = folder_name.strip()
 
         # Handle numbered prefix
-        match = re.match(r"^(\d{1,2})\.(.+)$", folder_name)
+        match = ParserConfig.REGEX_NUMBERED_PREFIX.match(folder_name)
         if match:
             number, rest = match.group(1), match.group(2).strip()
             rest = FilenameTranslator.get_translated_folder_name(rest)
@@ -175,4 +97,89 @@ class FilenameTranslator:
         # Handle other cases
         folder_name = FilenameTranslator.get_translated_place(folder_name)
         folder_name = FilenameTranslator.get_cleaned_ascii_token(folder_name)
+
         return folder_name
+
+    @staticmethod
+    def get_translated_filename(filename: str) -> str:
+        """
+        Translate a Thai filename into English.
+
+        Args:
+            filename (str): an input filename
+
+        Returns:
+            str: a translated version of filename
+
+        Example:
+            Usage: get_translated_filename("ส.ส.5-16 ชุดที่ 9")
+            Result: "constituency_vote_09"
+
+            Usage: get_translated_filename("ส.ส.5-17(บช)-ชุดที่ 1")
+            Result: "party_list_vote_01"
+        """
+
+        # Determine the voting type
+        translated_filename = "constituency_vote"
+        if ParserConfig.REGEX_PARTY_LIST_FILE_INDICATOR.search(filename):
+            translated_filename = "party_list_vote"
+
+        # Determine the file number
+        match = ParserConfig.REGEX_DOCUMENT_NUMBER.search(filename)
+        if match:
+            set_number = int(match.group(1))
+            translated_filename = f"{translated_filename}_{set_number:02d}"
+
+        return translated_filename
+
+    @staticmethod
+    def get_translated_place(text: str) -> str:
+        """
+        Translate a Thai places inside a text into English.
+
+        Args:
+            text (str): an input text
+
+        Returns:
+            str: a translated version of text
+
+        Example:
+            Usage: get_cleaned_ascii_token("ตำบลบ้านธิ")
+            Result: "ตำบลban_thi"
+        """
+
+        text = text.strip()
+        for place_th, place_en in ThaiConfig.THAI_PLACE_MAP.items():
+            text = text.replace(place_th, place_en)
+
+        return text
+
+    @staticmethod
+    def get_cleaned_ascii_token(token: str) -> str:
+        """
+        Converts an input token from into lowercase string
+        with underscore as delimiter.
+        If a cleaned token is empty, returns "x" instead.
+
+        Args:
+            token (str): an input text part
+
+        Returns:
+            str: cleaned text part
+
+        Example:
+            Usage: get_cleaned_ascii_token("Hello World! (2024)")
+            Result: "hello_world_2024"
+        """
+
+        # Convert a text to lowercase and remove trailing spaces
+        token = token.lower().strip()
+
+        # Replace all non-english and non-number characters with underscore
+        token = ParserConfig.REGEX_NON_ALPHABET_AND_NON_NUMBER.sub("_", token)
+        token = ParserConfig.REGEX_MULTIPLE_UNDERSCORES.sub("_", token).strip("_")
+
+        # Returns cleaned text
+        if token:
+            return token
+        return "x"

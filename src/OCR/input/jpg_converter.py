@@ -1,28 +1,35 @@
 import pypdfium2
+
 from pathlib import Path
 from tqdm import tqdm
-from logs.logs import Logs
+
 from config.path_config import PathConfig
+from logs.logs import Logs
 
 
 class JPGConverter:
+    """
+    A converter class that converts PDF files to multiple JPG page files.
+    """
+
     # Converter parameters
     SCALE: float = 2.0
     QUALITY: int = 90
     COLOR_MODE: str = "RGB"
     FILE_EXTENSION: str = "JPEG"
 
+    @staticmethod
     def get_all_jpg_from_pdf_files() -> None:
         """
         Converts all PDF files to JPG file
         """
 
+        # Write Logs
+        Logs.write_logs(messages=["[OK] Begin converting PDF to JPG files"])
+        Logs.write_report(message="[OK] Begin converting PDF to JPG files")
+
         # Create output path
         PathConfig.JPG_PATH.mkdir(parents=True, exist_ok=True)
-
-        # Write Logs
-        Logs.write_logs(messages=["Starting JPG file Converting Process"])
-        Logs.write_report(message="Starting JPG file Converting Process")
 
         # Initialize pages counter
         n_success = 0
@@ -30,7 +37,9 @@ class JPGConverter:
 
         # Converts all PDf files into JPG files
         all_files = list(PathConfig.PDF_PATH.rglob("*.pdf"))
-        for file_path in tqdm(all_files, desc="Converting PDFs to JPGs", unit="file"):
+        for file_path in tqdm(
+            all_files, desc="Converting PDF to JPG files", unit="file"
+        ):
             n_curr_success, n_curr_total = JPGConverter.get_jpg_from_pdf_file(file_path)
 
             # Update counter
@@ -41,13 +50,14 @@ class JPGConverter:
         n_skipped = n_total - n_success
         Logs.write_logs(
             messages=[
-                f"Done JPG file Converting Process ({n_success} pages converted and {n_skipped} pages skipped)"
+                f"[OK] Done converting PDF to {n_success} JPG files with {n_skipped} pages skipped"
             ]
         )
         Logs.write_report(
-            message=f"Done JPG file Converting Process ({n_success} pages converted and {n_skipped} pages skipped)"
+            message=f"[OK] Done converting PDF to {n_success} JPG files with {n_skipped} pages skipped"
         )
 
+    @staticmethod
     def get_jpg_from_pdf_file(file_path: Path) -> tuple[int, int]:
         """
         Converts a single PDF file to JPG file
@@ -58,6 +68,11 @@ class JPGConverter:
         Returns:
             tuple[int, int]: amount of successfully converted pages and total pages
         """
+
+        # Write logs
+        Logs.write_logs(
+            messages=[f"[OK] Begin converting {file_path.name} to a JPG file"]
+        )
 
         # Construct a PDF file object
         pdf_file = pypdfium2.PdfDocument(str(file_path))
@@ -75,7 +90,9 @@ class JPGConverter:
             # Skip if the current page is already exist
             if output_path.exists():
                 Logs.write_logs(
-                    messages=[f"Skipped {output_path.name} because it is already exist"]
+                    messages=[
+                        f"[SKIP] Skipped {file_path.name} because {output_path.name} is already exist."
+                    ]
                 )
                 continue
 
@@ -93,7 +110,7 @@ class JPGConverter:
             # Write logs
             Logs.write_logs(
                 messages=[
-                    f"Successfully convert {file_path.name} to {output_path.name}"
+                    f"[OK] Done converting {file_path.name} to {output_path.name}"
                 ]
             )
 

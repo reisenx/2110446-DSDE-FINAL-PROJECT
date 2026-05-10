@@ -1,12 +1,19 @@
 import shutil
+
 from pathlib import Path
-from logs.logs import Logs
+from tqdm import tqdm
+
 from config.path_config import PathConfig
 from input.filename_translator import FilenameTranslator
-from tqdm import tqdm
+from logs.logs import Logs
 
 
 class PDFCollector:
+    """
+    A collector class that collect raw PDF dataset from the nested folder structure
+    then renames it by it path and put them in a single output folder
+    """
+
     @staticmethod
     def collect_all_pdf_files() -> None:
         """
@@ -18,15 +25,15 @@ class PDFCollector:
         PathConfig.PDF_PATH.mkdir(parents=True, exist_ok=True)
 
         # Write Logs
-        Logs.write_logs(messages=["Starting PDF Files Collecting Process"])
-        Logs.write_report(message="Starting PDF Files Collecting Process")
+        Logs.write_logs(messages=["[OK] Begin collecting PDF files"])
+        Logs.write_report(message="[OK] Begin collecting PDF files")
 
         # Initialize file counter
         n_success = 0
 
         # Collect all PDF files
         all_files = list(PathConfig.RAW_DATASET_PATH.rglob("*.pdf"))
-        for file_path in tqdm(all_files, desc="Collecting Raw Dataset", unit="file"):
+        for file_path in tqdm(all_files, desc="Collecting PDF files", unit="file"):
             is_success = PDFCollector.collect_pdf_file(file_path)
             n_success += int(is_success)
 
@@ -34,11 +41,11 @@ class PDFCollector:
         n_skipped = len(all_files) - n_success
         Logs.write_logs(
             messages=[
-                f"Done PDF Files Collecting Process ({n_success} files converted and {n_skipped} files skipped)"
+                f"[OK] Done collecting {n_success} PDF files with {n_skipped} files skipped"
             ]
         )
         Logs.write_report(
-            message=f"Done PDF Files Collecting Process ({n_success} files converted and {n_skipped} files skipped)"
+            message=f"[OK] Done collecting {n_success} PDF files with {n_skipped} files skipped"
         )
 
     @staticmethod
@@ -53,9 +60,16 @@ class PDFCollector:
             bool: determine if the file collecting is successful
         """
 
+        # Write logs
+        Logs.write_logs(messages=[f"[OK] Begin renaming {file_path.name}"])
+
         # Skip a file which is not the PDF file
         if not file_path.is_file() or file_path.suffix.lower() != ".pdf":
-            Logs.write_logs(messages=[f"Skipped {file_path.name}"])
+            Logs.write_logs(
+                messages=[
+                    f"[SKIP] Skipped {file_path.name} because it is not a PDF file"
+                ]
+            )
             return False
 
         # Define output path
@@ -66,7 +80,7 @@ class PDFCollector:
         if output_path.exists():
             Logs.write_logs(
                 messages=[
-                    f"Skipped {file_path.name} because {output_path.name} is already exist"
+                    f"[SKIP] Skipped {file_path.name} because {output_path.name} is already exist"
                 ]
             )
             return False
@@ -76,6 +90,6 @@ class PDFCollector:
 
         # Write logs
         Logs.write_logs(
-            messages=[f"Successfully rename {file_path.name} to {output_path.name}"]
+            messages=[f"[OK] Done renaming {file_path.name} to {output_path.name}"]
         )
         return True
