@@ -14,13 +14,13 @@ import pandas as pd
 import os
 import re
 
-SCRIPT_DIR    = os.path.dirname(os.path.abspath(__file__))
-INPUT_DIR     = os.path.join(SCRIPT_DIR, "final_csv")
-OUTPUT_CSV    = os.path.join(SCRIPT_DIR, "fact_votes_v5.csv")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+INPUT_DIR = os.path.join(SCRIPT_DIR, "final_csv")
+OUTPUT_CSV = os.path.join(SCRIPT_DIR, "fact_votes_v5.csv")
 
 AMPHOE_MAP = {
-    "ban_thi":        "อำเภอบ้านธิ",
-    "mae_tha":        "อำเภอแม่ทา",
+    "ban_thi": "อำเภอบ้านธิ",
+    "mae_tha": "อำเภอแม่ทา",
     "mueang_lamphun": "อำเภอเมืองลำพูน",
 }
 
@@ -31,7 +31,7 @@ def parse_filename(fname):
 
     # ballot type
     is_party_list = "party_list_vote" in base
-    ballot_type   = "บัญชีรายชื่อ" if is_party_list else "แบ่งเขต"
+    ballot_type = "บัญชีรายชื่อ" if is_party_list else "แบ่งเขต"
 
     if base.startswith("advance_in_district"):
         return "ล่วงหน้าในเขต", ballot_type, "", ""
@@ -41,9 +41,9 @@ def parse_filename(fname):
 
     if base.startswith("district_"):
         # Pattern: district_{amphoe}__{tambon_key}__polling_unit_{N}__{ballot}_vote
-        parts      = base.split("__")
+        parts = base.split("__")
         amphoe_key = parts[0].replace("district_", "")
-        amphoe     = AMPHOE_MAP.get(amphoe_key, amphoe_key)
+        amphoe = AMPHOE_MAP.get(amphoe_key, amphoe_key)
         tambon_raw = parts[1] if len(parts) > 1 else ""
         # strip leading digits + subdistrict/municipality keywords for display
         tambon = re.sub(r"^\d+_subdistrict_", "", tambon_raw)
@@ -78,14 +78,16 @@ def main():
                 & (df["party"] != "")
                 & ~df["party"].isin(["party", "ชื่อพรรค"])
             ].copy()
-            df["score"] = pd.to_numeric(df["score"], errors="coerce").fillna(0).astype(int)
+            df["score"] = (
+                pd.to_numeric(df["score"], errors="coerce").fillna(0).astype(int)
+            )
 
             election_type, ballot_type, amphoe, tambon = parse_filename(fname)
             df["election_type"] = election_type
-            df["ballot_type"]   = ballot_type
-            df["amphoe"]        = amphoe
-            df["tambon"]        = tambon
-            df["source_file"]   = fname
+            df["ballot_type"] = ballot_type
+            df["amphoe"] = amphoe
+            df["tambon"] = tambon
+            df["source_file"] = fname
 
             frames.append(df)
         except Exception as e:
@@ -101,7 +103,15 @@ def main():
         return
 
     result = pd.concat(frames, ignore_index=True)[
-        ["party", "score", "election_type", "ballot_type", "amphoe", "tambon", "source_file"]
+        [
+            "party",
+            "score",
+            "election_type",
+            "ballot_type",
+            "amphoe",
+            "tambon",
+            "source_file",
+        ]
     ]
     result.to_csv(OUTPUT_CSV, index=False, encoding="utf-8-sig")
     print(f"\nWrote {len(result):,} rows → {OUTPUT_CSV}")
