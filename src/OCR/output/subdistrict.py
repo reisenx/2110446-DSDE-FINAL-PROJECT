@@ -130,4 +130,4 @@ class Subdistrict:
                 target_median_ratio,
                 target_threshold,
             ):
-                station.vote_scores[target_party] = expected_score
+                station.vote_scores[target_party] = int(round(expected_score))

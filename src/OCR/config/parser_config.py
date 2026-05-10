@@ -46,7 +46,8 @@ class ParserConfig:
         "หมายเลขประจำตัว",
         "หมายเลขของบัญชีรายชื่อ",
         "ผู้สมัคร",
-        "ชื่อ" "สังกัด",
+        "ชื่อ",
+        "สังกัด",
         "พรรคการเมือง",
         "ได้คะแนน",
         "ให้กรอกทั้งตัวเลขและตัวอักษร",
@@ -114,7 +115,7 @@ class ParserConfig:
         "ไทยทรัพยากร": "ไทยทรัพย์ทวี",
     }
 
-    FIXER_NUMBER_TOKEN: list[re.Pattern[str], str] = [
+    FIXER_NUMBER_TOKEN: list[tuple[re.Pattern[str], str]] = [
         (re.compile(r"ศนย|ศูนย"), "ศูนย์"),
         (re.compile(r"หนง|หนึง"), "หนึ่ง"),
         (re.compile(r"เอด"), "เอ็ด"),
@@ -130,7 +131,6 @@ class ParserConfig:
         (re.compile(r"สีบ"), "สิบ"),
         (re.compile(r"สี"), "สี่"),
         (re.compile(r"สร้อย"), "สี่ร้อย"),
-        (re.compile(r"สพัน"), "สี่พัน"),
         (re.compile(r"สพัน"), "สี่พัน"),
         (re.compile(r"สหมื่น"), "สี่หมื่น"),
         (re.compile(r"สแสน"), "สี่แสน"),
