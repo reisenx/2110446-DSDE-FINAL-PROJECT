@@ -6,7 +6,7 @@ from tqdm import tqdm
 from config.parser_config import ParserConfig
 from config.path_config import PathConfig
 from logs.logs import Logs
-from parser.parser_utility import ParserUtility
+from utility.parser_utility import ParserUtility
 
 
 class BadNumberTokenInspector:
