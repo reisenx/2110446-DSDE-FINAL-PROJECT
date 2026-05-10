@@ -6,7 +6,7 @@ from tqdm import tqdm
 from config.parser_config import ParserConfig
 from config.path_config import PathConfig
 from logs.logs import Logs
-from parser.parser_utility import ParserUtility
+from utility.parser_utility import ParserUtility
 
 
 class VotingResultInspector:
@@ -171,9 +171,27 @@ class VotingResultInspector:
 
                     # Skip if the current cell text is a table header cell
                     if (
-                        ParserUtility.is_header_cell(table_cells[thai_score_column_idx])
-                        or ParserUtility.is_total_score_cell(
-                            table_cells[thai_score_column_idx]
+                        (
+                            thai_score_column_idx != -1
+                            and (
+                                ParserUtility.is_header_cell(
+                                    table_cells[thai_score_column_idx]
+                                )
+                                or ParserUtility.is_total_score_cell(
+                                    table_cells[thai_score_column_idx]
+                                )
+                            )
+                        )
+                        or (
+                            arabic_score_column_idx != -1
+                            and (
+                                ParserUtility.is_header_cell(
+                                    table_cells[arabic_score_column_idx]
+                                )
+                                or ParserUtility.is_total_score_cell(
+                                    table_cells[arabic_score_column_idx]
+                                )
+                            )
                         )
                         or ParserUtility.is_header_cell(
                             table_cells[party_name_column_idx]
