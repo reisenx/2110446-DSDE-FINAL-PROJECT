@@ -1,52 +1,63 @@
 import os
 import time
+
+from collections import deque
 from dotenv import load_dotenv
 from pathlib import Path
-from collections import deque
-from typhoon_ocr import ocr_document
 from tqdm import tqdm
-from logs.logs import Logs
+from typhoon_ocr import ocr_document
+
 from config.path_config import PathConfig
+from logs.logs import Logs
 
 
 class ThaiOCR:
-    def __init__(self):
+    """
+    Model class to perform OCR on a JPG image file into a markdown document.
+    This class calls Typhoon OCR model via API
+    """
+
+    def __init__(self) -> None:
         """
         Constructor method for ThaiOCR class
         """
 
         # Load Typhoon model API key
         load_dotenv()
-        self.api_key = os.getenv("TYPHOON_API_KEY")
+        self.api_key: str = os.getenv("TYPHOON_API_KEY")
 
         # Model properties configuration
-        self.model = "typhoon-ocr"
-        self.figure_language = "Thai"
-        self.task_type = "v1.5"
+        self.model: str = "typhoon-ocr"
+        self.figure_language: str = "Thai"
+        self.task_type: str = "v1.5"
 
         # Image queue for OCR operations
-        self.image_queue = deque()
+        self.image_queue: deque = deque()
+        self.n_total_images: int = 0
 
         # Image queue configuration
-        self.retry_delay = 2.0
+        self.retry_delay: float = 2.0
+        self.n_max_attempts: int = 5
 
     def load_image_queue(self) -> None:
         """
         Load all images into object's image queue
         """
 
+        # Write logs
+        Logs.write_logs(messages=["[OK] Begin loading ThaiOCR image queue"])
+        Logs.write_report(message="[OK] Begin loading ThaiOCR image queue")
+
         # Get a list of all image files
         all_files = list(PathConfig.JPG_PATH.rglob("*.jpg"))
-
-        # Write logs
-        Logs.write_logs(messages=["Starting Image Queue Loading Process"])
-        Logs.write_report(message="Starting Image Queue Loading Process")
 
         # Initialize file counter
         n_success = 0
 
         # Iterate each image in a list
-        for file_path in tqdm(all_files, desc="Load images to a queue", unit="file"):
+        for file_path in tqdm(
+            all_files, desc="Loading ThaiOCR image queue", unit="file"
+        ):
             # Define the output path of an image
             output_path = ThaiOCR.get_output_path(file_path)
 
@@ -54,7 +65,7 @@ class ThaiOCR:
             if file_path.name in PathConfig.OCR_EXCEPTION_FILENAMES:
                 Logs.write_logs(
                     messages=[
-                        f"Skipped {file_path.name} because it is in OCR file exception"
+                        f"[SKIP] Skipped {file_path.name} as it is defined in the file exception"
                     ]
                 )
                 continue
@@ -63,7 +74,7 @@ class ThaiOCR:
             if output_path.exists():
                 Logs.write_logs(
                     messages=[
-                        f"Skipped {file_path.name} because {output_path.name} is already exist"
+                        f"[SKIP] Skipped {file_path.name} because {output_path.name} is already exist"
                     ]
                 )
                 continue
@@ -75,21 +86,28 @@ class ThaiOCR:
             # Update counter
             n_success += 1
 
+        # Store total images in the object
+        self.n_total_images = n_success
+
         # Write logs
         n_skipped = len(all_files) - n_success
         Logs.write_logs(
             messages=[
-                f"Done Image Queue Loading Process ({n_success} images loaded and {n_skipped} images skipped)"
+                f"[OK] Done loading {n_success} images to ThaiOCR image queue with {n_skipped} images skipped."
             ]
         )
         Logs.write_report(
-            message=f"Done Image Queue Loading Process ({n_success} images loaded and {n_skipped} images skipped)"
+            message=f"[OK] Done loading {n_success} images to ThaiOCR image queue with {n_skipped} images skipped."
         )
 
     def get_all_markdown_from_images(self) -> None:
         """
-        OCR all images from a folder then save each one as markdown file.
+        Perform OCR all images from a folder then save each one as markdown file.
         """
+
+        # Write logs
+        Logs.write_logs(messages=["[OK] Begin performing OCR on images"])
+        Logs.write_report(message="[OK] Begin performing OCR on images")
 
         # Create the output directory
         PathConfig.MARKDOWN_PATH.mkdir(parents=True, exist_ok=True)
@@ -97,13 +115,9 @@ class ThaiOCR:
         # Load all images from a folder to the image queue
         self.load_image_queue()
 
-        # Write logs
-        Logs.write_logs(messages=["Starting Typhoon Model OCR Process"])
-        Logs.write_report(message="Starting Typhoon Model OCR Process")
-
         # Initialize progress bar
         progress_bar = tqdm(
-            total=len(self.image_queue), desc="Typhoon Model OCR Process"
+            total=len(self.image_queue), desc="Performing OCR on images", unit="file"
         )
 
         # Process a queue until the model OCR all images
@@ -114,6 +128,10 @@ class ThaiOCR:
             # Get the path information
             file_path = image_info["file_path"]
             output_path = ThaiOCR.get_output_path(file_path)
+
+            # Update the attempts counter
+            image_info["n_attempts"] += 1
+            n_attempts = image_info["n_attempts"]
 
             # Process an image
             try:
@@ -126,47 +144,60 @@ class ThaiOCR:
                 # Write logs
                 Logs.write_logs(
                     messages=[
-                        f"Trying to OCR an image from path {file_path.name}",
-                        f"Successfully OCR an image {file_path.name}",
-                        f"Saved the result at {output_path.name}",
+                        f"[OK] Try to perform OCR on {file_path.name} image ({n_attempts} attempts)",
+                        f"[OK] Successfully OCR on {file_path.name} image",
+                        f"[OK] Saved the result as {output_path.name}",
                     ]
                 )
 
             except Exception as e:
-                # Put the failed image back to the image queue
-                image_info["n_attempts"] += 1
-                self.image_queue.append(image_info)
-
                 # Write logs
                 n_attempts = image_info["n_attempts"]
                 Logs.write_logs(
                     messages=[
-                        f"Trying to OCR an image from path {file_path.name}",
-                        f"Failed to OCR an image {file_path.name} ({n_attempts} attempts)",
-                        f"Exception: {e}",
-                        "Put the image back to the image queue",
+                        f"[OK] Try to perform OCR on {file_path.name} image ({n_attempts} attempts)",
+                        f"[ERROR] Failed to OCR on {file_path.name} image with exception {e}",
                     ]
                 )
 
-                # Add delay before moving to the next image
-                time.sleep(self.retry_delay)
+                # Put the image back to an image queue
+                if n_attempts < self.n_max_attempts:
+                    self.image_queue.append(image_info)
+                    Logs.write_logs(
+                        messages=[
+                            f"[OK] Put {file_path.name} image back to the image queue",
+                            f"[OK] Added {self.retry_delay} seconds delay",
+                        ]
+                    )
+
+                    # Add delay before moving to the next image
+                    time.sleep(self.retry_delay)
+
+                # Skip the image if it reaches maximum attempts
+                else:
+                    # Update the progress bar
+                    progress_bar.update(1)
+
+                    Logs.write_logs(
+                        messages=[
+                            f"[SKIP] Skipped {file_path.name} because it reaches maximum attempts",
+                        ]
+                    )
 
         # Write logs
         Logs.write_logs(
-            messages=[
-                f"Done Typhoon Model OCR Process ({len(self.image_queue)} images processed)"
-            ]
+            messages=[f"[OK] Done performing OCR on {self.n_total_images} images"]
         )
         Logs.write_report(
-            message=f"Done Typhoon Model OCR Process ({len(self.image_queue)} images processed)"
+            message=f"[OK] Done performing OCR on {self.n_total_images} images"
         )
 
     def get_markdown_from_image(self, file_path: Path) -> None:
         """
-        OCR a single image and write the result as a markdown file
+        Perform OCR on a single image and save the result as a markdown file
 
         Args:
-            file_path (Path): image file path
+            file_path (Path): JPG image file path
         """
 
         # Define output path for the current image
