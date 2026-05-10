@@ -5,9 +5,13 @@
 .vscode
 
 # Temporary files
+temp
 desktop.ini
 __pycache__
 
 # Large dataset
 data/pdf
 data/jpg
+
+# Logs
+generated/logs
