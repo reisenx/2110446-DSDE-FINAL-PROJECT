@@ -74,44 +74,48 @@ class JPGConverter:
             messages=[f"[OK] Begin converting {file_path.name} to a JPG file"]
         )
 
-        # Construct a PDF file object
-        pdf_file = pypdfium2.PdfDocument(str(file_path))
-
-        # Get page count of the current PDF file
-        n_pages = len(pdf_file)
+        # Initialize counter
+        n_pages = 0
         n_successful_pages = 0
 
-        # Iterate each page in a PDF file
-        for idx in range(n_pages):
-            # Define output path of a current page
-            filename = f"{file_path.stem}_page_{idx + 1}.jpg"
-            output_path = PathConfig.JPG_PATH / filename
+        # Open PDF file
+        with pypdfium2.PdfDocument(str(file_path)) as pdf_file:
+            # Set the correct page count
+            n_pages = len(pdf_file)
 
-            # Skip if the current page is already exist
-            if output_path.exists():
+            # Iterate each page in a PDF file
+            for idx in range(n_pages):
+                # Define output path of a current page
+                filename = f"{file_path.stem}_page_{idx + 1}.jpg"
+                output_path = PathConfig.JPG_PATH / filename
+
+                # Skip if the current page is already exist
+                if output_path.exists():
+                    Logs.write_logs(
+                        messages=[
+                            f"[SKIP] Skipped {file_path.name} because {output_path.name} is already exist."
+                        ]
+                    )
+                    continue
+
+                # Converts to JPG file
+                page = pdf_file[idx]
+                bitmap = page.render(scale=JPGConverter.SCALE)
+                image = bitmap.to_pil().convert(JPGConverter.COLOR_MODE)
+                image.save(
+                    output_path,
+                    JPGConverter.FILE_EXTENSION,
+                    quality=JPGConverter.QUALITY,
+                )
+
+                # Update counter
+                n_successful_pages += 1
+
+                # Write logs
                 Logs.write_logs(
                     messages=[
-                        f"[SKIP] Skipped {file_path.name} because {output_path.name} is already exist."
+                        f"[OK] Done converting {file_path.name} to {output_path.name}"
                     ]
                 )
-                continue
-
-            # Converts to JPG file
-            page = pdf_file[idx]
-            bitmap = page.render(scale=JPGConverter.SCALE)
-            image = bitmap.to_pil().convert(JPGConverter.COLOR_MODE)
-            image.save(
-                output_path, JPGConverter.FILE_EXTENSION, quality=JPGConverter.QUALITY
-            )
-
-            # Update counter
-            n_successful_pages += 1
-
-            # Write logs
-            Logs.write_logs(
-                messages=[
-                    f"[OK] Done converting {file_path.name} to {output_path.name}"
-                ]
-            )
 
         return (n_successful_pages, n_pages)
